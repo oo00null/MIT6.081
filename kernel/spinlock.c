@@ -92,7 +92,7 @@ push_off(void)
 
   intr_off();
   if(mycpu()->noff == 0)
-    mycpu()->intena = old;
+    mycpu()->intena = old;//are device interrupts enabled before disable interrupt(execute intr_off()) ?  
   mycpu()->noff += 1;
 }
 

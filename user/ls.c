@@ -12,6 +12,11 @@ fmtname(char *path)
   // Find first character after last slash.
   for(p=path+strlen(path); p >= path && *p != '/'; p--)
     ;
+
+    /*           p
+    path->././././wc
+    */
+
   p++;
 
   // Return blank-padded name.

@@ -122,7 +122,7 @@ recover_from_log(void)
   write_head(); // clear the log
 }
 
-// called at the start of each FS system call.
+// called at the start of each FS system call.      FS(file system)
 void
 begin_op(void)
 {
@@ -130,7 +130,7 @@ begin_op(void)
   while(1){
     if(log.committing){
       sleep(&log, &log.lock);
-    } else if(log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE){
+    } else if(log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE){  //check overflow
       // this op might exhaust log space; wait for commit.
       sleep(&log, &log.lock);
     } else {
