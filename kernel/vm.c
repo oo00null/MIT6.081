@@ -352,7 +352,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     va0 = PGROUNDDOWN(dstva);
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
-      return -1;
+      return -1;  // if the page is not present, we can't copy.
     n = PGSIZE - (dstva - va0);
     if(n > len)
       n = len;
@@ -431,4 +431,54 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+//vmprint inner
+uint64 vmprint_inner(pagetable_t pagetable, uint64 deep){
+  // there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if((pte & PTE_V) ){
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+
+      for(int j=0;j<deep;j++)
+        printf(" ..");
+      printf("%d: pte %p pa %p\n",i,pte,PTE2PA(pte));
+      if(deep==3)
+        continue;
+      else
+        vmprint_inner((pagetable_t)child,deep+1);
+    } 
+  }
+    return 0; 
+}
+
+
+//print pagetable
+void vmprint(pagetable_t pagetable)
+{ 
+  printf("page table %p\n",pagetable);
+  if(vmprint_inner(pagetable,1)!=0)
+    panic("vmprint: error");
+  return;
+    
+}
+
+uint64
+PgIsAccess(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+
+  if(va >= MAXVA)
+    return 0; 
+
+  pte = walk(pagetable, va, 0);
+  if(pte == 0)
+    return 0;
+  if((*pte & PTE_A) != 0){
+    *pte &= (~PTE_A);
+    return 1;
+    }
+  return 0;
 }
