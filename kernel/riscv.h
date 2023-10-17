@@ -160,8 +160,9 @@ w_mideleg(uint64 x)
 
 // Supervisor Trap-Vector Base Address
 // low two bits are mode.
+//address of trap handler
 static inline void 
-w_stvec(uint64 x)
+w_stvec(uint64 x)  
 {
   asm volatile("csrw stvec, %0" : : "r" (x));
 }
