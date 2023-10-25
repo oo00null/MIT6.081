@@ -9,13 +9,13 @@ struct elfhdr {
   ushort type;
   ushort machine;
   uint version;
-  uint64 entry;
-  uint64 phoff;
-  uint64 shoff;
+  uint64 entry; //程序的入口地址
+  uint64 phoff; //程序头表在文件中的偏移量。
+  uint64 shoff; //程序头表在文件中的偏移量。
   uint flags;
-  ushort ehsize;
-  ushort phentsize;
-  ushort phnum;
+  ushort ehsize;    //ELF头的大小（字节）
+  ushort phentsize; //程序头表中每个表项的大小
+  ushort phnum;     //程序头表中的表项数量
   ushort shentsize;
   ushort shnum;
   ushort shstrndx;
@@ -25,11 +25,11 @@ struct elfhdr {
 struct proghdr {
   uint32 type;
   uint32 flags;
-  uint64 off;
+  uint64 off; //程序段在文件中的偏移量
   uint64 vaddr;
   uint64 paddr;
-  uint64 filesz;
-  uint64 memsz;
+  uint64 filesz;//程序段在文件中的大小
+  uint64 memsz; //程序段在内存中的大小
   uint64 align;
 };
 
