@@ -23,10 +23,15 @@ struct {
   struct run *freelist;
 } kmem;
 
+int reference_count[PHYSTOP >> 12];   // page reference count
+struct spinlock ref_cnt_lock;
+
+
 void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+  initlock(&ref_cnt_lock, "ref_cnt_lock");
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -47,6 +52,7 @@ void
 kfree(void *pa)
 {
   struct run *r;
+  uint64 cnt;
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
@@ -55,6 +61,14 @@ kfree(void *pa)
   memset(pa, 1, PGSIZE);
 
   r = (struct run*)pa;
+
+  acquire(&ref_cnt_lock);
+  if(reference_count[(uint64)r>>12]<1)
+    panic("kfree ref");
+  cnt=reference_count[(uint64)r>>12]-=1;
+  release(&ref_cnt_lock);
+  if(cnt>0)
+    return ;
 
   acquire(&kmem.lock);
   r->next = kmem.freelist;
@@ -72,8 +86,12 @@ kalloc(void)
 
   acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if(r){
     kmem.freelist = r->next;
+    acquire(&ref_cnt_lock);
+    reference_count[(uint64)r>>12]=1;
+    release(&ref_cnt_lock);
+  }
   release(&kmem.lock);
 
   if(r)

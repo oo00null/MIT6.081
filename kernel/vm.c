@@ -16,6 +16,7 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 extern char trampoline[]; // trampoline.S
 
 // Make a direct-map page table for the kernel.
+
 pagetable_t
 kvmmake(void)
 {
@@ -308,11 +309,16 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
-    // if((*pte & PTE_V) == 0)
-    //   panic("uvmcopy: page not present");
+    if((*pte & PTE_V) == 0)
+       panic("uvmcopy: page not present");
      pa = PTE2PA(*pte);
-    *pte= *pte & ~PTE_W;
+     reference_count[pa >> 12] += 1;
     flags = PTE_FLAGS(*pte);
+    if(flags & PTE_W) {
+      flags = (flags | PTE_RSW) & ~PTE_W;
+      *pte = PA2PTE(pa) | flags;
+    }
+
     // if((mem = kalloc()) == 0)
     //   goto err;
     // memmove(mem, (char*)pa, PGSIZE);
@@ -320,6 +326,8 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       //kfree(mem);
       goto err;
     }
+    // printf("pte %p\n",*pte);
+    // printf("flag %p\n",flags);
   }
   return 0;
 
@@ -348,12 +356,31 @@ int
 copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 {
   uint64 n, va0, pa0;
-
+  pte_t *pte;
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
     pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
-      return -1;
+    if (pa0 == 0) {
+    	return -1;
+    }
+	pte = walk(pagetable, va0, 0);
+    if (*pte & PTE_RSW)
+    {
+      // allocate a new page
+      uint64 ka = (uint64) kalloc(); // newly allocated physical address
+
+      if (ka == 0){
+      	struct proc *p = myproc();
+        p->killed = 1; // there's no free memory
+      } else {
+        memmove((char*)ka, (char*)pa0, PGSIZE); // copy the old page to the new page
+        uint flags = PTE_FLAGS(*pte);
+        uvmunmap(pagetable, va0, 1, 1);
+        *pte = PA2PTE(ka) | flags | PTE_W;
+        *pte &= ~PTE_RSW;
+        pa0 = ka;
+      }
+    } 
     n = PGSIZE - (dstva - va0);
     if(n > len)
       n = len;
@@ -365,6 +392,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
   }
   return 0;
 }
+
 
 // Copy from user to kernel.
 // Copy len bytes to dst from virtual address srcva in a given page table.

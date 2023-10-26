@@ -49,6 +49,9 @@ usertrap(void)
   
   // save user program counter.
   p->trapframe->epc = r_sepc();
+
+
+ 
   
   if(r_scause() == 8){
     // system call
@@ -68,21 +71,10 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
   }
-  //  else if(r_scause()==15){
-  //   uint64 va =r_stval();
-  //   printf("page fault %p\n",va);
-  //   uint64 ka = (uint64)kalloc();
-  //   if(ka == 0){
-  //     p->killed = 1;
-  //   } else {
-  //     memset((void*)ka,0,PGSIZE);
-  //     va = PGROUNDDOWN(va);
-  //     if(mappages(p->pagetable,va,PGSIZE,ka,PTE_W|PTE_U|PTE_R)!=0){
-  //       kfree((void*)ka);
-  //       p->killed = 1;
-  //       }
-  //   }
-  // }
+  else if(r_scause()==13||r_scause()==15){ //page fault
+  if (cowhandler(p->pagetable, r_stval()) < 0)
+      p->killed = 1;
+  }
   else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
@@ -289,6 +281,43 @@ devintr()
     return 0;
   }
 }
+
+
+
+int
+cowhandler(pagetable_t pagetable, uint64 va){
+    uint64 pa;
+    if (va >= MAXVA) 
+      return -1;
+    pte_t *pte;
+    if((pte = walk(pagetable, va , 0)) == 0)
+       panic("pte walk error in trap");  
+    if(pte==0) return -1;
+
+    if((*pte & PTE_RSW)==0||(*pte & PTE_V)==0){
+        return -1;
+    }
+// alloc
+    pa = PTE2PA(*pte);
+    va  = PGROUNDDOWN(va);
+    char* mem = kalloc();
+    if(mem == 0){
+      return -1;
+    } 
+    else {
+      memmove(mem, (char*)pa, PGSIZE);
+      kfree((void *)pa);
+      *pte &= ~PTE_V;
+      //printf("pte %p\n",*pte);
+      if(mappages(pagetable,va ,PGSIZE,(uint64)mem,(PTE_FLAGS(*pte) | PTE_W) & ~PTE_RSW)!=0){
+        kfree(mem);
+        *pte |= PTE_V;
+        return -1;
+      }
+    }
+    return 0;
+}
+
 
 
 

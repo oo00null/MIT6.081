@@ -11,6 +11,7 @@
         "syscall.h": "c",
         "random": "c",
         "sleeplock.h": "c",
-        "file.h": "c"
+        "file.h": "c",
+        "fs.h": "c"
     }
 }
