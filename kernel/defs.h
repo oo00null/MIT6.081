@@ -10,8 +10,6 @@ struct stat;
 struct superblock;
 
 
-
-
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -66,6 +64,7 @@ void            ramdiskrw(struct buf*);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
+void            add_reference_count(uint64);
 
 // log.c
 void            initlog(int, struct superblock*);

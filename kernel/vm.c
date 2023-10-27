@@ -5,6 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -312,7 +314,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     if((*pte & PTE_V) == 0)
        panic("uvmcopy: page not present");
      pa = PTE2PA(*pte);
-     reference_count[pa >> 12] += 1;
+     add_reference_count(pa);
     flags = PTE_FLAGS(*pte);
     if(flags & PTE_W) {
       flags = (flags | PTE_RSW) & ~PTE_W;

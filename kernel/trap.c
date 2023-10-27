@@ -71,7 +71,7 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
   }
-  else if(r_scause()==13||r_scause()==15){ //page fault
+  else if(r_scause()==15){ //page fault
   if (cowhandler(p->pagetable, r_stval()) < 0)
       p->killed = 1;
   }

@@ -27,6 +27,7 @@ int reference_count[PHYSTOP >> 12];   // page reference count
 struct spinlock ref_cnt_lock;
 
 
+
 void
 kinit()
 {
@@ -57,18 +58,18 @@ kfree(void *pa)
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
-  // Fill with junk to catch dangling refs.
-  memset(pa, 1, PGSIZE);
 
   r = (struct run*)pa;
 
   acquire(&ref_cnt_lock);
-  if(reference_count[(uint64)r>>12]<1)
-    panic("kfree ref");
-  cnt=reference_count[(uint64)r>>12]-=1;
+  if(reference_count[(uint64)r>>12]>=1)
+    cnt=reference_count[(uint64)r>>12]-=1;
+  else
+    cnt=reference_count[(uint64)r>>12];
   release(&ref_cnt_lock);
-  if(cnt>0)
-    return ;
+  if(cnt>0) return ;
+  // Fill with junk to catch dangling refs.
+  memset(pa, 1, PGSIZE);
 
   acquire(&kmem.lock);
   r->next = kmem.freelist;
@@ -97,4 +98,13 @@ kalloc(void)
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
+}
+
+
+void
+add_reference_count(uint64 pa)
+{
+  acquire(&ref_cnt_lock);
+  reference_count[pa >> 12]+=1;   // page reference count
+  release(&ref_cnt_lock);
 }
