@@ -365,7 +365,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     if (pa0 == 0) {
     	return -1;
     }
-	pte = walk(pagetable, va0, 0);
+	  pte = walk(pagetable, va0, 0);
     if (*pte & PTE_RSW)
     {
       // allocate a new page
