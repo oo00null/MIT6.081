@@ -358,14 +358,14 @@ exit(int status)
   end_op();
   p->cwd = 0;
 
-  acquire(&wait_lock);
+  acquire(&wait_lock);//block wait() to access process state before exit() return
 
   // Give any children to init.
   reparent(p);
 
   // Parent might be sleeping in wait().
   wakeup(p->parent);
-  
+
   acquire(&p->lock);
 
   p->xstate = status;

@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "future": "c",
+        "semaphore": "c",
+        "stop_token": "c",
+        "sleeplock.h": "c",
+        "cstdio": "c",
+        "cstdlib": "c"
+    }
+}

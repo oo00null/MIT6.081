@@ -106,7 +106,7 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 
 // swtch.S
-void            swtch(struct context*, struct context*);
+void            swtch(struct context*, struct context*);  //为内核线程切换执行保存和恢复操作
 
 // spinlock.c
 void            acquire(struct spinlock*);
