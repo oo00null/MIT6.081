@@ -91,7 +91,7 @@ kalloc(void)
         r = kmem[i].freelist;
         kmem[i].freelist = r->next;
         release(&kmem[i].lock);
-        break;            //just find the one;
+        break;            //just find the one; 
     }
   }
   }
