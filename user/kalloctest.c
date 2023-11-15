@@ -89,7 +89,7 @@ countfree()
       break;
     }
     // modify the memory to make sure it's really allocated.
-    *(char *)(a + 4096 - 1) = 1;
+    *(char *)(a + 4096 - 1) = 1;  
     n += 1;
   }
   sbrk(-((uint64)sbrk(0) - sz0));
@@ -111,6 +111,7 @@ void test2() {
     if(i % 10 == 9)
       printf(".");
     if(free1 != free0) {
+      printf("free0:%d free1:%d i:%d\n",free0,free1,i);
       printf("test2 FAIL: losing pages\n");
       exit(-1);
     }
