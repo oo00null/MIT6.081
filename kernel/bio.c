@@ -295,7 +295,6 @@ bwrite(struct buf *b)
   virtio_disk_rw(b, 1);
 }
 
-
 void
 brelse(struct buf* b) {
   if(!holdingsleep(&b->lock))
